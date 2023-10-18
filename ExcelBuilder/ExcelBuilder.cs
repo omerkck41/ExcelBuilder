@@ -13,8 +13,10 @@ namespace ExcelBuilder
 		{
 			if(string.IsNullOrEmpty(worksheetName)) 
 				throw new ArgumentException($"{nameof(worksheetName)} cannot be empty or null.");
+            
+			ExcelPackage.LicenseContext = LicenseContext.Commercial;
 
-			_package = templatePath == null ? new ExcelPackage() : new ExcelPackage(new FileInfo(templatePath));
+            _package = templatePath == null ? new ExcelPackage() : new ExcelPackage(new FileInfo(templatePath));
 
 			// Zaten var olan bir çalışma sayfasını kontrol edin
 			_worksheet = _package.Workbook.Worksheets.FirstOrDefault(ws => ws.Name.Equals(worksheetName, StringComparison.OrdinalIgnoreCase));
@@ -24,7 +26,9 @@ namespace ExcelBuilder
 		}
 		public ExcelBuilder(string? templatePath = null)
 		{
-			_package = templatePath == null ? new ExcelPackage() : new ExcelPackage(new FileInfo(templatePath));
+            ExcelPackage.LicenseContext = LicenseContext.Commercial;
+
+            _package = templatePath == null ? new ExcelPackage() : new ExcelPackage(new FileInfo(templatePath));
 
 			// Eğer worksheetName belirtilmemişse, ilk çalışma sayfası kullanılır. Eğer hiç çalışma sayfası yoksa, yeni bir tane oluşturulur.
 			_worksheet = _package.Workbook.Worksheets.FirstOrDefault() ?? _package.Workbook.Worksheets.Add("Sheet1");
@@ -259,7 +263,8 @@ namespace ExcelBuilder
 			if(data == null || data.Count == 0)
 				throw new ArgumentException($"Data cannot be empty or null.");
 
-			using ExcelPackage package = new();
+            ExcelPackage.LicenseContext = LicenseContext.Commercial;
+            using ExcelPackage package = new();
 			var worksheet = package.Workbook.Worksheets.Add("Sheet1");
 
 			// Sütun başlıklarını yazdırın ve biçimlendirin
@@ -286,7 +291,8 @@ namespace ExcelBuilder
 			if (string.IsNullOrEmpty(filePath))
 				throw new ArgumentException($"{nameof(filePath)} cannot be empty or null.");
 
-			using var package = new ExcelPackage(new FileInfo(filePath));
+            ExcelPackage.LicenseContext = LicenseContext.Commercial;
+            using var package = new ExcelPackage(new FileInfo(filePath));
 			var worksheet = package.Workbook.Worksheets.First();
 
 			var properties = typeof(T).GetProperties();
