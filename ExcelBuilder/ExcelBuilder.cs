@@ -335,9 +335,64 @@ namespace ExcelBuilder
 
 			return entities;
 		}
+        /// <summary>
+        /// Transfers by matching Excel Columns and Class Columns respectively. 		
+        /// The first column of the class Id is considered the default and continues from the next property.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="filePath"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        public static List<T> MapEntitiesFromExcel<T>(string filePath)
+        {
+            if (string.IsNullOrEmpty(filePath))
+                throw new ArgumentException($"{nameof(filePath)} cannot be empty or null.");
 
+            ExcelPackage.LicenseContext = LicenseContext.Commercial;
+            using var package = new ExcelPackage(new FileInfo(filePath));
+            var worksheet = package.Workbook.Worksheets.First();
+            var entities = new List<T>();
 
-		public void Build(string directory, string fileName, string fileExtension = ".xlsx")
+            // Excel'deki sütun başlıklarını alın
+            var headerRow = worksheet.Cells[1, 1, 1, worksheet.Dimension.End.Column];
+            var headerValues = headerRow.Select(cell => cell.Text).ToList();
+
+            for (int row = 2; row <= worksheet.Dimension.End.Row; row++)
+            {
+                var entity = Activator.CreateInstance<T>();
+                var properties = typeof(T).GetProperties();
+
+                for (int col = 1; col <= worksheet.Dimension.End.Column; col++)
+                {
+                    if (col > properties.Length)
+                    {
+                        // Sınıfın özellik sayısından fazla sütun varsa işlem yapmayın.
+                        break;
+                    }
+
+                    var headerValue = headerValues[col - 1];
+                    var property = properties[col];
+                    var cellValue = worksheet.Cells[row, col].Value;
+
+                    if (property.PropertyType == typeof(DateTime) && cellValue is double numericValue)
+                    {
+                        var dateTimeValue = DateTime.FromOADate(numericValue);
+                        property.SetValue(entity, dateTimeValue);
+                    }
+                    else
+                    {
+                        var convertedValue = Convert.ChangeType(cellValue, property.PropertyType);
+                        property.SetValue(entity, convertedValue);
+                    }
+                }
+
+                entities.Add(entity);
+            }
+
+            return entities;
+        }
+
+        public void Build(string directory, string fileName, string fileExtension = ".xlsx")
 		{
 			if (string.IsNullOrEmpty(directory) || string.IsNullOrEmpty(fileName))
 				throw new ArgumentException($"{nameof(directory)} or {nameof(fileName)} cannot be empty or null.");
